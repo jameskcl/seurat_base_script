@@ -1,0 +1,37 @@
+# Load required packages
+library(Seurat)
+library(Matrix)
+library(dplyr)
+
+# Load first dataset
+data1 <- Read10X("data1_mtx") # Load data from 10x Genomics
+seurat1 <- CreateSeuratObject(counts = data1) # Create Seurat object
+seurat1 <- NormalizeData(object = seurat1, normalization.method = "LogNormalize", scale.factor = 10000) # Normalize and scale data
+seurat1 <- FindVariableFeatures(object = seurat1, selection.method = "vst", nfeatures = 2000) # Feature selection
+seurat1 <- ScaleData(object = seurat1, features = rownames(seurat1)) # Scaling data
+seurat1 <- RunPCA(object = seurat1, features = VariableFeatures(object = seurat1)) # Perform PCA
+seurat1 <- FindNeighbors(object = seurat1, dims = 1:10) # Find nearest neighbors
+seurat1 <- FindClusters(object = seurat1, resolution = 0.5) # Cluster cells
+seurat1@meta.data$dataset <- "data1" # Assign dataset name
+
+# Load second dataset
+data2 <- Read10X("data2_mtx") # Load data from 10x Genomics
+seurat2 <- CreateSeuratObject(counts = data2) # Create Seurat object
+seurat2 <- NormalizeData(object = seurat2, normalization.method = "LogNormalize", scale.factor = 10000) # Normalize and scale data
+seurat2 <- FindVariableFeatures(object = seurat2, selection.method = "vst", nfeatures = 2000) # Feature selection
+seurat2 <- ScaleData(object = seurat2, features = rownames(seurat2)) # Scaling data
+seurat2 <- RunPCA(object = seurat2, features = VariableFeatures(object = seurat2)) # Perform PCA
+seurat2 <- FindNeighbors(object = seurat2, dims = 1:10) # Find nearest neighbors
+seurat2 <- FindClusters(object = seurat2, resolution = 0.5) # Cluster cells
+seurat2@meta.data$dataset <- "data2" # Assign dataset name
+
+# Merge datasets
+seurat_list <- list(seurat1, seurat2) # Create list of Seurat objects
+seurat_merged <- MergeSeurat(object.list = seurat_list) # Merge objects
+seurat_merged <- ScaleData(object = seurat_merged, features = rownames(seurat_merged)) # Scale data
+seurat_merged <- RunPCA(object = seurat_merged, features = VariableFeatures(object = seurat_merged)) # Perform PCA
+seurat_merged <- FindNeighbors(object = seurat_merged, dims = 1:10) # Find nearest neighbors
+seurat_merged <- FindClusters(object = seurat_merged, resolution = 0.5) # Cluster cells
+
+# Plot merged dataset
+DimPlot(object = seurat_merged, reduction = "umap", group.by = "dataset")
